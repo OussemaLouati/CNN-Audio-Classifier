@@ -1,0 +1,37 @@
+extraction:
+  mel_bands: 128
+  min_segment_duration_ms: 50.0
+  sample_rate: 22050
+  hop_length: 512
+  n_fft: 2048
+
+training:
+  batch_size: 32
+  epochs: 50
+  learning_rate: 0.001
+  random_seed: 42
+  train_split: 0.70
+  val_split: 0.15
+  test_split: 0.15
+
+evaluation:
+  accuracy_threshold: 0.8
+  precision_threshold: 0.75
+  recall_threshold: 0.75
+  f1_threshold: 0.75
+
+pre_labeller:
+  confidence_threshold: 0.7
+  review_marker: "[review]"
+
+mlflow:
+  tracking_uri: "http://mlflow.audio-classifier:5000"
+  experiment_name: "audio-classification-v2"
+  model_name: "audio-classifier-cnn-v2"
+
+storage:
+  backend: "minio"  
+  minio_endpoint: "minio.audio-classifier:9000"
+  minio_bucket: "mlflow-artifacts"
+  minio_access_key: "${MINIO_ACCESS_KEY}"
+  minio_secret_key: "${MINIO_SECRET_KEY}"

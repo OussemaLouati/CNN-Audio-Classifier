@@ -1,0 +1,63 @@
+apiVersion: machinelearning.seldon.io/v1
+kind: SeldonDeployment
+metadata:
+  name: audio-classifier
+  namespace: audio-classifier
+spec:
+  predictors:
+    - name: default
+      replicas: 1
+      annotations:
+        seldon.io/no-engine: "true"
+      graph:
+        name: audio-classifier-cnn
+        type: MODEL
+        modelUri: "s3://mlflow-artifacts/1/6aef6e95ed334a6688fd681ec8aea32d/artifacts/model"
+        envSecretRefName: seldon-rclone-secret
+        children: []
+      componentSpecs:
+        - spec:
+            containers:
+              - name: audio-classifier-cnn
+                image: audio-classifier-pipeline:latest
+                imagePullPolicy: Never
+                command: ["python", "-m", "core.serve"]
+                args: ["--model-path", "/mnt/models", "--port", "8080"]
+                ports:
+                  - containerPort: 8080
+                    name: http
+                    protocol: TCP
+                env:
+                  - name: MPLCONFIGDIR
+                    value: "/tmp/matplotlib"
+                  - name: AWS_ACCESS_KEY_ID
+                    valueFrom:
+                      secretKeyRef:
+                        name: minio-credentials
+                        key: access-key
+                  - name: AWS_SECRET_ACCESS_KEY
+                    valueFrom:
+                      secretKeyRef:
+                        name: minio-credentials
+                        key: secret-key
+                  - name: MLFLOW_S3_ENDPOINT_URL
+                    value: "http://minio:9000"
+                livenessProbe:
+                  httpGet:
+                    path: /health/status
+                    port: 8080
+                  initialDelaySeconds: 30
+                  periodSeconds: 10
+                readinessProbe:
+                  httpGet:
+                    path: /health/status
+                    port: 8080
+                  initialDelaySeconds: 20
+                  periodSeconds: 5
+                resources:
+                  requests:
+                    cpu: "500m"
+                    memory: "2Gi"
+                  limits:
+                    cpu: "2"
+                    memory: "4Gi"
