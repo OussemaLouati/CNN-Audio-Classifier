@@ -37,6 +37,7 @@ download data → extract spectrograms → train CNN → evaluate → promote mo
 │   ├── training.py          # CNN model + MLflow-tracked training
 │   ├── evaluation.py        # Metrics + threshold gating
 │   ├── promotion.py         # Compare vs champion, promote in MLflow
+│   ├── serve.py             # model serving utility
 │   └── pre_labeller.py      # Semi-automated labelling tool
 ├── deploy/
 │   └── k8s/
@@ -46,7 +47,8 @@ download data → extract spectrograms → train CNN → evaluate → promote mo
 ├── configs/
 │   └── pipeline_config.yaml # parameters
 ├── scripts/
-│   └── provision.sh             # One-command: cluster + infra + data upload
+    └── provision-linux.sh             # One-command: cluster + infra + data upload for linux
+│   └── provision-mac.sh             # One-command: cluster + infra + data upload for mac
 ├── Dockerfile               # Pipeline container image
 └── requirements.txt         # Python dependencies
 ```
@@ -79,8 +81,8 @@ All parameters in `configs/pipeline_config.yaml`:
 
 ## Visualize pipeline
 1. Minio Buckets created
-- "pipeline-data" holds the training input data and 
-- "mlflow-artifacts" hold mlflow metadata and model artifacts
+- "pipeline-data" holds the training input data  
+- "mlflow-artifacts" holds mlflow metadata and model artifacts
 ![buckets](./static/buckets.png)
 
 2. Workflow submitted (`deploy/k8s/argo-workflow.yaml`):
