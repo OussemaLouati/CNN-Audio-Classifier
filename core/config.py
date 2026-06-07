@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 import yaml
 import os
 
+
 @dataclass
 class ExtractionConfig:
     mel_bands: int = 128
@@ -45,7 +46,7 @@ class MLflowConfig:
 
 @dataclass
 class StorageConfig:
-    backend: str = "minio"  
+    backend: str = "minio"
     minio_endpoint: str = "minio.audio-classifier:9000"
     minio_bucket: str = "mlflow-artifacts"
     minio_access_key: str = ""
@@ -60,7 +61,6 @@ class PipelineConfig:
     pre_labeller: PreLabellerConfig = field(default_factory=PreLabellerConfig)
     mlflow: MLflowConfig = field(default_factory=MLflowConfig)
     storage: StorageConfig = field(default_factory=StorageConfig)
-
 
     @classmethod
     def from_yaml(cls, path: str):
@@ -77,7 +77,11 @@ class PipelineConfig:
 
         storage_data = data.pop("storage", {})
         for key, value in storage_data.items():
-            if isinstance(value, str) and value.startswith("${") and value.endswith("}"):
+            if (
+                isinstance(value, str)
+                and value.startswith("${")
+                and value.endswith("}")
+            ):
                 env_var = value[2:-1]
                 storage_data[key] = os.environ.get(env_var, "")
         storage_config = StorageConfig(**storage_data)

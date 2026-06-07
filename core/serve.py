@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 app = Flask(__name__)
 _model = None
 
+
 def load_model(model_path: str):
     global _model
 
@@ -58,7 +59,9 @@ def predict():
 
 def main():
     parser = argparse.ArgumentParser(description="Model serving endpoint")
-    parser.add_argument("--model-path", default="/mnt/models", help="Path to model directory")
+    parser.add_argument(
+        "--model-path", default="/mnt/models", help="Path to model directory"
+    )
     parser.add_argument("--port", type=int, default=8080, help="Port")
     parser.add_argument("--host", default="0.0.0.0", help="Host")
     args = parser.parse_args()

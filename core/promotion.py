@@ -8,12 +8,15 @@ from mlflow.tracking import MlflowClient
 from core.config import PipelineConfig
 from core.evaluation import evaluate_against_thresholds
 from core.evaluation import build_thresholds_from_config
+
 logger = logging.getLogger(__name__)
 
 
 def get_model_version_from_run(client, model_name: str, run_id: str):
     try:
-        versions = client.search_model_versions(f"name='{model_name}' and run_id='{run_id}'")
+        versions = client.search_model_versions(
+            f"name='{model_name}' and run_id='{run_id}'"
+        )
         if versions:
             return versions[0].version
     except Exception as e:
@@ -48,12 +51,13 @@ def promote_model(
     try:
         prod_versions = []
         try:
-            prod_version_info = client.get_model_version_by_alias(model_name, "champion")
+            prod_version_info = client.get_model_version_by_alias(
+                model_name, "champion"
+            )
             if prod_version_info:
                 prod_versions = [prod_version_info]
         except Exception:
             pass
-
 
         if prod_versions:
             prod_run_id = prod_versions[0].run_id
@@ -108,9 +112,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run model promotion step")
     parser.add_argument("--config", required=True, help="Path to pipeline_config.yaml")
     parser.add_argument("--run-id", required=True, help="MLflow run ID from training")
-    parser.add_argument("--metrics-file", required=True, help="JSON file with evaluation metrics")
+    parser.add_argument(
+        "--metrics-file", required=True, help="JSON file with evaluation metrics"
+    )
     args = parser.parse_args()
-
 
     config = PipelineConfig.from_yaml(args.config)
 

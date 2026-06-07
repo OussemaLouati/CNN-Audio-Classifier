@@ -44,12 +44,14 @@ def parse_label_file_with_confidence(text: str) -> List[PredictionEntry]:
         if line.startswith("[review]"):
             line = line[1:]
         parts = line.split("\t")
-        entries.append(PredictionEntry(
-            start_time=float(parts[0]),
-            end_time=float(parts[1]),
-            label=parts[2],
-            confidence=float(parts[3]),
-        ))
+        entries.append(
+            PredictionEntry(
+                start_time=float(parts[0]),
+                end_time=float(parts[1]),
+                label=parts[2],
+                confidence=float(parts[3]),
+            )
+        )
     return entries
 
 
@@ -105,7 +107,7 @@ def run_inference(
     endpoint_url: str,
     config: PipelineConfig,
 ) -> List[PredictionEntry]:
-   
+
     audio, _ = librosa.load(audio_path, sr=config.extraction.sample_rate)
 
     segments = segment_audio(
@@ -131,19 +133,23 @@ def run_inference(
         try:
             probs = predict_via_endpoint(spectrogram, endpoint_url)
         except Exception as e:
-            logger.warning(f"Prediction failed for segment {start_time:.2f}-{end_time:.2f}: {e}")
+            logger.warning(
+                f"Prediction failed for segment {start_time:.2f}-{end_time:.2f}: {e}"
+            )
             continue
 
         class_idx = int(np.argmax(probs))
         confidence = float(probs[class_idx])
         label = CLASS_NAMES[class_idx]
 
-        predictions.append(PredictionEntry(
-            start_time=start_time,
-            end_time=end_time,
-            label=label,
-            confidence=confidence,
-        ))
+        predictions.append(
+            PredictionEntry(
+                start_time=start_time,
+                end_time=end_time,
+                label=label,
+                confidence=confidence,
+            )
+        )
 
     return predictions
 
@@ -154,9 +160,14 @@ def main() -> int:
     )
     parser.add_argument("--input", required=True, help="Path to the input audio file.")
     parser.add_argument("--config", required=True, help="Path to pipeline_config.yaml.")
-    parser.add_argument("--output", required=True, help="Path for the output label file.")
-    parser.add_argument("--endpoint", default="http://localhost:9500",
-                        help="Seldon prediction endpoint URL (default: http://localhost:9500)")
+    parser.add_argument(
+        "--output", required=True, help="Path for the output label file."
+    )
+    parser.add_argument(
+        "--endpoint",
+        default="http://localhost:9500",
+        help="Seldon prediction endpoint URL (default: http://localhost:9500)",
+    )
     args = parser.parse_args()
 
     try:
@@ -164,7 +175,6 @@ def main() -> int:
     except (FileNotFoundError, OSError) as e:
         logger.error(f"Failed to load config: {e}")
         return 1
-
 
     try:
         predictions = run_inference(args.input, args.endpoint, config)
@@ -192,7 +202,9 @@ def main() -> int:
         logger.error(f"Failed to write output file: {e}")
         return 1
 
-    logger.info(f"Pre-labelling complete: {len(predictions)} predictions written to {args.output}")
+    logger.info(
+        f"Pre-labelling complete: {len(predictions)} predictions written to {args.output}"
+    )
     return 0
 
 

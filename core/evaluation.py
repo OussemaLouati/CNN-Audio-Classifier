@@ -22,15 +22,13 @@ class EvaluationResult:
     per_class_recall: Dict[str, float]
     macro_f1: float
     approved: bool
-    failed_metrics: List[Tuple[str, float, float]] 
+    failed_metrics: List[Tuple[str, float, float]]
 
 
 def compute_metrics(y_true: np.ndarray, y_pred: np.ndarray):
     metrics: Dict[str, float] = {
         "accuracy": float(accuracy_score(y_true, y_pred)),
-        "macro_f1": float(
-            f1_score(y_true, y_pred, average="macro", zero_division=0.0)
-        ),
+        "macro_f1": float(f1_score(y_true, y_pred, average="macro", zero_division=0.0)),
     }
 
     precision_per_class = precision_score(
@@ -85,17 +83,14 @@ def evaluate_model(
     mlflow.set_experiment(config.mlflow.experiment_name)
 
     with mlflow.start_run(run_id=run_id):
-        mlflow.log_metrics({
-                    f"eval_{k}": v for k, v in metrics.items()
-                })
-        mlflow.log_metrics({
-                    "eval_approved": 1.0 if approved else 0.0,
-                })
+        mlflow.log_metrics({f"eval_{k}": v for k, v in metrics.items()})
+        mlflow.log_metrics(
+            {
+                "eval_approved": 1.0 if approved else 0.0,
+            }
+        )
 
-
-    per_class_precision = {
-        name: metrics[f"precision_{name}"] for name in CLASS_NAMES
-    }
+    per_class_precision = {name: metrics[f"precision_{name}"] for name in CLASS_NAMES}
     per_class_recall = {name: metrics[f"recall_{name}"] for name in CLASS_NAMES}
 
     return EvaluationResult(
@@ -109,10 +104,12 @@ def evaluate_model(
 
 
 if __name__ == "__main__":
-    
+
     parser = argparse.ArgumentParser(description="Run evaluation step")
     parser.add_argument("--config", required=True, help="Path to pipeline_config.yaml")
-    parser.add_argument("--model-dir", required=True, help="Directory with trained model")
+    parser.add_argument(
+        "--model-dir", required=True, help="Directory with trained model"
+    )
     parser.add_argument("--data-dir", required=True, help="Directory with test data")
     parser.add_argument("--run-id", default="", help="MLflow run ID from training")
     args = parser.parse_args()
@@ -145,14 +142,18 @@ if __name__ == "__main__":
 
     # Compute metrics and evaluate against thresholds
     thresholds = build_thresholds_from_config(config.evaluation)
-    result = evaluate_model(y_true, y_pred, thresholds, run_id=args.run_id, config=config)
+    result = evaluate_model(
+        y_true, y_pred, thresholds, run_id=args.run_id, config=config
+    )
 
     logger.info(
         f"Evaluation: accuracy={result.accuracy:.4f}, macro_f1={result.macro_f1:.4f}, approved={result.approved}"
     )
     if result.failed_metrics:
         for name, actual, threshold in result.failed_metrics:
-            logger.warning(f"  FAILED: {name} = {actual:.4f} (threshold: {threshold:.4f})")
+            logger.warning(
+                f"  FAILED: {name} = {actual:.4f} (threshold: {threshold:.4f})"
+            )
 
     # Save metrics to JSON for the promotion step
     metrics = compute_metrics(y_true, y_pred)

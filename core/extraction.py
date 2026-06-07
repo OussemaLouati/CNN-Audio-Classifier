@@ -17,9 +17,9 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class LabelEntry:
-    start_time: float  
-    end_time: float  
-    label: str  
+    start_time: float
+    end_time: float
+    label: str
     source_file: str
 
 
@@ -45,9 +45,7 @@ def parse_label_file(file_path: str, source_audio_path: str):
     return entries
 
 
-def filter_short_segments(
-    entries: List[LabelEntry], min_duration_ms: float = 50.0
-):
+def filter_short_segments(entries: List[LabelEntry], min_duration_ms: float = 50.0):
 
     valid = []
     discarded = []
@@ -100,8 +98,12 @@ def compute_mel_spectrogram(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run extraction step")
     parser.add_argument("--config", required=True, help="Path to pipeline_config.yaml")
-    parser.add_argument("--input-dir", required=True, help="Directory with audio + label files")
-    parser.add_argument("--output-dir", required=True, help="Directory to write spectrograms")
+    parser.add_argument(
+        "--input-dir", required=True, help="Directory with audio + label files"
+    )
+    parser.add_argument(
+        "--output-dir", required=True, help="Directory to write spectrograms"
+    )
     args = parser.parse_args()
 
     config = PipelineConfig.from_yaml(args.config)
@@ -179,13 +181,19 @@ if __name__ == "__main__":
 
     # Pad spectrograms to uniform width (max time frames)
     max_frames = max(s.shape[1] for s in all_spectrograms)
-    padded = np.zeros((len(all_spectrograms), config.extraction.mel_bands, max_frames), dtype=np.float32)
+    padded = np.zeros(
+        (len(all_spectrograms), config.extraction.mel_bands, max_frames),
+        dtype=np.float32,
+    )
     for i, s in enumerate(all_spectrograms):
-        padded[i, :, :s.shape[1]] = s
+        padded[i, :, : s.shape[1]] = s
 
     # Save as numpy arrays
     np.save(os.path.join(args.output_dir, "spectrograms.npy"), padded)
-    np.save(os.path.join(args.output_dir, "labels.npy"), np.array(all_labels, dtype=np.int32))
+    np.save(
+        os.path.join(args.output_dir, "labels.npy"),
+        np.array(all_labels, dtype=np.int32),
+    )
 
     logger.info(
         f"Extraction complete: {total_extracted} spectrograms extracted, {total_discarded} discarded, shape={padded.shape}"

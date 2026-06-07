@@ -14,6 +14,7 @@ import argparse
 import os
 
 from core.config import PipelineConfig
+
 logger = logging.getLogger(__name__)
 
 
@@ -65,18 +66,20 @@ def generate_model_version() -> str:
 
 
 def build_cnn_model(input_shape: Tuple[int, int, int], num_classes: int = 3):
-    model = tf.keras.Sequential([
-        tf.keras.layers.Input(shape=input_shape),
-        tf.keras.layers.Conv2D(32, (3, 3), activation="relu"),
-        tf.keras.layers.MaxPooling2D((2, 2)),
-        tf.keras.layers.Conv2D(64, (3, 3), activation="relu"),
-        tf.keras.layers.MaxPooling2D((2, 2)),
-        tf.keras.layers.Conv2D(128, (3, 3), activation="relu"),
-        tf.keras.layers.GlobalAveragePooling2D(),
-        tf.keras.layers.Dense(64, activation="relu"),
-        tf.keras.layers.Dropout(0.3),
-        tf.keras.layers.Dense(num_classes, activation="softmax"),
-    ])
+    model = tf.keras.Sequential(
+        [
+            tf.keras.layers.Input(shape=input_shape),
+            tf.keras.layers.Conv2D(32, (3, 3), activation="relu"),
+            tf.keras.layers.MaxPooling2D((2, 2)),
+            tf.keras.layers.Conv2D(64, (3, 3), activation="relu"),
+            tf.keras.layers.MaxPooling2D((2, 2)),
+            tf.keras.layers.Conv2D(128, (3, 3), activation="relu"),
+            tf.keras.layers.GlobalAveragePooling2D(),
+            tf.keras.layers.Dense(64, activation="relu"),
+            tf.keras.layers.Dropout(0.3),
+            tf.keras.layers.Dense(num_classes, activation="softmax"),
+        ]
+    )
     return model
 
 
@@ -97,7 +100,7 @@ def train_model(
     config=None,
 ):
     try:
-        
+
         mlflow.set_tracking_uri(config.mlflow.tracking_uri)
         mlflow.set_experiment(config.mlflow.experiment_name)
 
@@ -107,16 +110,18 @@ def train_model(
             run_id = run.info.run_id
 
             # Log parameters
-            mlflow.log_params({
-                "epochs": epochs,
-                "batch_size": batch_size,
-                "learning_rate": learning_rate,
-                "num_classes": num_classes,
-                "input_shape": str(list(input_shape)),
-                "dataset_version": dataset_version,
-                "config_hash": config_hash,
-                "commit_sha": commit_sha,
-            })
+            mlflow.log_params(
+                {
+                    "epochs": epochs,
+                    "batch_size": batch_size,
+                    "learning_rate": learning_rate,
+                    "num_classes": num_classes,
+                    "input_shape": str(list(input_shape)),
+                    "dataset_version": dataset_version,
+                    "config_hash": config_hash,
+                    "commit_sha": commit_sha,
+                }
+            )
 
             # Build and compile the model
             model = build_cnn_model(input_shape=input_shape, num_classes=num_classes)
@@ -136,16 +141,22 @@ def train_model(
             )
 
             # Extract training history
-            history_dict = {k: [float(v) for v in vals] for k, vals in history.history.items()}
+            history_dict = {
+                k: [float(v) for v in vals] for k, vals in history.history.items()
+            }
             final_val_loss = history_dict.get("val_loss", [None])[-1]
             final_val_accuracy = history_dict.get("val_accuracy", [None])[-1]
 
             # Log metrics
-            mlflow.log_metrics({
-                "val_loss": final_val_loss if final_val_loss is not None else 0.0,
-                "val_accuracy": final_val_accuracy if final_val_accuracy is not None else 0.0,
-                "epochs_completed": len(history_dict.get("loss", [])),
-            })
+            mlflow.log_metrics(
+                {
+                    "val_loss": final_val_loss if final_val_loss is not None else 0.0,
+                    "val_accuracy": (
+                        final_val_accuracy if final_val_accuracy is not None else 0.0
+                    ),
+                    "epochs_completed": len(history_dict.get("loss", [])),
+                }
+            )
 
             save_path = model_save_path
             if not save_path.endswith((".keras", ".h5", ".hdf5")):
@@ -163,7 +174,9 @@ def train_model(
             # Generate a unique model version
             model_version = generate_model_version()
 
-            logger.info(f"Training complete. MLflow run_id={run_id}, model_version={model_version}")
+            logger.info(
+                f"Training complete. MLflow run_id={run_id}, model_version={model_version}"
+            )
 
             return TrainingResult(
                 model_version=model_version,
@@ -180,11 +193,15 @@ def train_model(
         sys.exit(1)
 
 
-if __name__ == "__main__":   
+if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run training step")
     parser.add_argument("--config", required=True, help="Path to pipeline_config.yaml")
-    parser.add_argument("--data-dir", required=True, help="Directory with extracted spectrograms")
-    parser.add_argument("--output-dir", required=True, help="Directory to write model artifacts")
+    parser.add_argument(
+        "--data-dir", required=True, help="Directory with extracted spectrograms"
+    )
+    parser.add_argument(
+        "--output-dir", required=True, help="Directory to write model artifacts"
+    )
     args = parser.parse_args()
 
     config = PipelineConfig.from_yaml(args.config)
